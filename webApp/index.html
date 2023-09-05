@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>BluePad32 BLE Example</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script type="module" src="./main.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        pre {
+            flex-grow: 1;
+            overflow: auto;
+            margin: 0px;
+            background-color: lightgray;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        p:last-of-type {
+            border-bottom: 1px solid lightgray;
+            padding-bottom: 1em;
+            margin-bottom: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>BluePad32 Webapp Example</h1>
+    <div class="buttons">
+        <button id="connectBTN">Connect</button>
+
+        <button id="readValue">Read</button>
+
+        <button id="send">Send Value</button>
+        <input id="valueToSend" placeholder="Value to send" />
+
+    </div>
+
+    <p>
+        This app connects to an ESP32 running the BluePad32 ESP32 example code. Click the connect button to attempt to
+        connect to the ESP. You can also connect a controller, the ESP will communicate with both at the same time.
+    </p>
+
+    <p>Why not send <em>r</em>, <em>g</em> or <em>b</em> and see what happens to a connected DS4.</p>
+
+    <p>
+        You can read values from and send values to the ESP. Data will be logged below.
+    </p>
+
+    <pre id="logger"></pre>
+</body>
+
+</html>

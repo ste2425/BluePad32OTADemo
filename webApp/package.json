@@ -1,0 +1,11 @@
+{
+  "name": "bluepad32-webapp-example",
+  "description": "Simple Web app using Web Bluetooth to talk to BluePad32",
+  "scripts": {
+    "start": "http-server -o -a localhost"
+  },
+  "devDependencies": {
+    "@types/web-bluetooth": "^0.0.17",
+    "http-server": "^14.1.1"
+  }
+}
