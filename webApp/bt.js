@@ -1,8 +1,25 @@
 import { Logger } from './logger.js';
-import { primaryServiceUUID, characteristicUUID } from './constants.js';
+import { primaryServiceUUID, characteristicUUID, otaCharactertisticUUID } from './constants.js';
 
 /** @type {BluetoothRemoteGATTCharacteristic} */
-let characteristic;
+let characteristic,   
+    /** @type {BluetoothRemoteGATTCharacteristic} */
+    otaCharacteristic;
+
+/** @type {BluetoothDevice} */
+let device;
+
+// OTA variables
+    let totalSize = 0,
+        remaining = 0,
+        amountToWrite = 0,
+        currentPosition = 0;
+
+    /** @type {ArrayBuffer} */
+    let update;
+
+    const blockSize = 244;
+// ------
 
 /**
  * Connects to the ESP32. Then connects to its primary service and finally connects to the characteristic to be used later.
@@ -14,7 +31,7 @@ export async function btConnect(logger) {
     try {
         logger.log('Requesting Bluetooth Device...');
 
-        const device = await navigator.bluetooth.requestDevice(
+        device = await navigator.bluetooth.requestDevice(
             {
                 filters: [{
                     name: 'BluePad'
@@ -56,6 +73,12 @@ export async function btConnect(logger) {
         
         logProperties(characteristic.properties, logger);
 
+        otaCharacteristic = await primaryService.getCharacteristic(otaCharactertisticUUID);
+    
+        logger.log(`Got OTA Characteristic`);
+        
+        logProperties(otaCharacteristic.properties, logger);
+
     } catch (e) {
         logger.log('Error:');
         logger.logPretty({
@@ -78,9 +101,76 @@ export async function sendValue(value, logger) {
     
     logger.log(`Sending value: ${value}`);
 
-    await characteristic.writeValueWithResponse(value);
+    await characteristic.writeValueWithoutResponse(value);
 
     logger.log('Sent');
+}
+
+/** 
+ * Sends a value to the connected characterisic
+ * Values have to be encoded as Array Buffers. If sending a string `TextEncoder` can be used.
+ * 
+ * @param {Logger} logger 
+ */
+export async function sendNextBlock(logger, setProgres) {
+    if (!otaCharacteristic)
+        return;
+
+    if (remaining <= 0) {
+        logger.log('Complete');
+        //device.gatt?.disconnect();
+        return;
+    }
+    
+    if (remaining >= blockSize) {
+        amountToWrite = blockSize;
+    } else {
+        amountToWrite = remaining;
+    }
+
+    setProgres(currentPosition);
+
+    //const dataToSend = update.slice(currentPosition, currentPosition + amountToWrite);
+    const dataToSend = new DataView(update, currentPosition, amountToWrite);
+    
+    currentPosition += amountToWrite;
+    remaining -= amountToWrite;
+
+    logger.log(`Ammount remaining: ${remaining}`);
+
+    await otaCharacteristic.writeValueWithoutResponse(dataToSend);
+
+    logger.log('Sent');
+
+    //await sendNextBlock(logger, setProgres);
+}
+
+/** 
+ * Sends a value to the connected characterisic
+ * Values have to be encoded as Array Buffers. If sending a string `TextEncoder` can be used.
+ * 
+ * @param {ArrayBuffer} update
+ * @param {Logger} logger 
+ */
+export async function beginOTA(_update, logger, setProgres) {
+    if (!otaCharacteristic)
+        return;
+
+    update = _update;
+    totalSize = update.byteLength;
+    remaining = totalSize;
+    amountToWrite = 0;
+    currentPosition = 0;
+
+    otaCharacteristic.addEventListener('characteristicvaluechanged', async (e) => {
+        await sendNextBlock(logger, setProgres);
+    });
+
+    await otaCharacteristic.startNotifications();
+
+    await sendNextBlock(logger, setProgres);
+
+    //await otaCharacteristic.stopNotifications();
 }
 
 /** 

@@ -34,6 +34,10 @@
             padding-bottom: 1em;
             margin-bottom: 0px;
         }
+
+        #dialogModal h3 {
+            margin-top: 0px;
+        }
     </style>
 </head>
 
@@ -47,6 +51,10 @@
         <button id="send">Send Value</button>
         <input id="valueToSend" placeholder="Value to send" />
 
+        <button id="otaDialogBtn">Perform OTA Update</button>
+        <input type="file" id="otaUpdate" accept=".bin" />
+        <progress id="otaProgress" max="0" value="0"></progress>
+
     </div>
 
     <p>
@@ -59,6 +67,16 @@
     <p>
         You can read values from and send values to the ESP. Data will be logged below.
     </p>
+
+    <dialog id="dialogModal">
+        <h3>OTA Update</h3>
+
+
+        <hr>
+
+        <button id="otaClose">Close</button>
+        <button id="otaUpgrade" disabled>Upgrade</button>
+    </dialog>
 
     <pre id="logger"></pre>
 </body>

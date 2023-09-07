@@ -1,7 +1,8 @@
 #ifndef BLE_H
 #define BLE_H
   #include "att_setup.h"
-
+  #include "esp_ota_ops.h"
+  
   // define the types for our read and write callbacks
   typedef const char *(*OnReadCallback)();
   typedef void (*OnWriteCallback)(uint8_t *buffer);
