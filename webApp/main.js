@@ -35,7 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('readValue').addEventListener('click', () => readValue(logger));
 
     fileInput.addEventListener('change', ({ target }) => {
-      otaInputChange(target);
+      if (target.files.length)
+        otaUpgradeBtn.removeAttribute('disabled');
     });
 
     document.getElementById('otaDialogBtn').addEventListener('click', () => otaModal.showModal());    

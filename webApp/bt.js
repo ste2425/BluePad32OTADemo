@@ -13,7 +13,8 @@ let device;
     let totalSize = 0,
         remaining = 0,
         amountToWrite = 0,
-        currentPosition = 0;
+        currentPosition = 0,
+        otaInProgress = false;
 
     /** @type {ArrayBuffer} */
     let update;
@@ -53,6 +54,10 @@ export async function btConnect(logger) {
             logger.log('GATT Server disconnected');
 
             characteristic = undefined;
+
+            if (otaInProgress) {
+                alert('GATT Server disconnected whilst OTA in progress. Reset ESP, reload page and try again.');
+            }
         });
     
         const gattServer = await device.gatt.connect();
@@ -118,7 +123,7 @@ export async function sendNextBlock(logger, setProgres) {
 
     if (remaining <= 0) {
         logger.log('Complete');
-        //device.gatt?.disconnect();
+        otaInProgress = false;
         return;
     }
     
@@ -128,19 +133,19 @@ export async function sendNextBlock(logger, setProgres) {
         amountToWrite = remaining;
     }
 
-    setProgres(currentPosition);
-
     //const dataToSend = update.slice(currentPosition, currentPosition + amountToWrite);
     const dataToSend = new DataView(update, currentPosition, amountToWrite);
-    
-    currentPosition += amountToWrite;
-    remaining -= amountToWrite;
 
     logger.log(`Ammount remaining: ${remaining}`);
-
     await otaCharacteristic.writeValueWithoutResponse(dataToSend);
 
     logger.log('Sent');
+    
+    if (setProgres)
+        setProgres(currentPosition);
+    
+    currentPosition += amountToWrite;
+    remaining -= amountToWrite;
 
     //await sendNextBlock(logger, setProgres);
 }
@@ -156,6 +161,8 @@ export async function beginOTA(_update, logger, setProgres) {
     if (!otaCharacteristic)
         return;
 
+    otaInProgress = true;
+
     update = _update;
     totalSize = update.byteLength;
     remaining = totalSize;
@@ -163,7 +170,8 @@ export async function beginOTA(_update, logger, setProgres) {
     currentPosition = 0;
 
     otaCharacteristic.addEventListener('characteristicvaluechanged', async (e) => {
-        await sendNextBlock(logger, setProgres);
+        if (device.gatt?.connected)
+            await sendNextBlock(logger, setProgres);
     });
 
     await otaCharacteristic.startNotifications();
